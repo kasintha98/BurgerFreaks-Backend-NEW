@@ -33,11 +33,11 @@ exports.sendEmail = (req, res) => {
   try {
     transporter.sendMail(emailobj, function (err, res) {
       if (err) {
-        res.status(400).json({ error: err });
+        res?.status(400)?.json({ error: err });
       }
-      res.status(200).json({ res: "Success!" });
+      res?.status(200)?.json({ res: "Success!" });
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res?.status(500)?.json({ error: err.message });
   }
 };
