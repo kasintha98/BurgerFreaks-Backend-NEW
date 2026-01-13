@@ -31,9 +31,14 @@ const generateJwtToken = (_id, role) => {
 //signup controller
 exports.signup = (req, res) => {
   User.findOne({ email: req.body.email }).exec(async (err, user) => {
+    if (err) {
+      console.error("Error querying user for signup:", err);
+      return res.status(500).json({ error: "Something went wrong on the server." });
+    }
+
     if (user)
       return res.status(202).json({
-        errormsg: "User already registerd!",
+        errormsg: "User already registered!",
       });
 
     const {
@@ -63,10 +68,26 @@ exports.signup = (req, res) => {
 
     _user.save((err, user) => {
       if (err) {
-        return res
-          .status(400)
-          .json({ message: "Something went wrong when signup!" });
+        console.error("User signup error:", err);
+        // handle Mongo duplicate key error
+        if (err.code === 11000) {
+          const dupKey = Object.keys(err.keyValue || {})[0];
+          const dupVal = err.keyValue ? err.keyValue[dupKey] : undefined;
+          const message = dupKey
+            ? `${dupKey} '${dupVal}' is already in use.`
+            : "Duplicate key error.";
+          return res.status(409).json({ error: message });
+        }
+
+        // handle mongoose validation errors
+        if (err.errors) {
+          const messages = Object.values(err.errors).map((e) => e.message);
+          return res.status(400).json({ error: messages.join(", ") });
+        }
+
+        return res.status(500).json({ error: err.message || "Signup failed" });
       }
+
       if (user) {
         const token = generateJwtToken(user._id, user.role);
         const {
@@ -80,10 +101,10 @@ exports.signup = (req, res) => {
           role,
         } = user;
 
-        //send welcome email
+        // send welcome email asynchronously; log errors but don't block signup response
         transporter.sendMail({
           to: user.email,
-          from: "kasintha@nipunamu.com",
+          from: "MS_pvf83A@test-z0vklo6j2jvl7qrx.mlsender.net",
           subject: "Signup Successfull - Burger Freakz",
           html: `<html lang="en">
           <head>
@@ -183,8 +204,14 @@ exports.signup = (req, res) => {
               </center> <!-- End Wrapper -->
             </div> <!-- End Mail.ru Wrapper -->
           </body>
-          </html>`,
-        });
+          </html>`
+        })
+          .then((info) => {
+            console.log("Welcome email sent:", info?.response || info);
+          })
+          .catch((err) => {
+            console.error("Error sending welcome email:", err);
+          });
 
         return res.status(201).json({
           token,
@@ -273,9 +300,10 @@ exports.resetPassword = (req, res) => {
       user.expireToken = Date.now() + 3600000;
 
       user.save().then((result) => {
+        // send reset email asynchronously; log errors but don't crash
         transporter.sendMail({
           to: user.email,
-          from: "kasintha@nipunamu.com",
+          from: "MS_pvf83A@test-z0vklo6j2jvl7qrx.mlsender.net",
           subject: "Password Reset - Burger Freakz",
           html: `<div style="text-align: center; 
           background-image: url('https://images.pexels.com/photos/3272281/pexels-photo-3272281.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940'); 
@@ -288,8 +316,14 @@ exports.resetPassword = (req, res) => {
           <h4><a href="${process.env.FRONTENDAPI}/change-password/${token}" style="padding: 20px; background-color: #3dffdf;" >Reset Password</a></h4>
           <br>
           </div>
-          `,
-        });
+          `
+        })
+          .then((info) => {
+            console.log("Password reset email sent:", info?.response || info);
+          })
+          .catch((err) => {
+            console.error("Error sending password reset email:", err);
+          });
 
         res.json({ message: "Please Check Your Email!" });
       });

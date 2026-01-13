@@ -36,8 +36,6 @@ const userSchema = new Schema(
     nic: {
       type: String,
       trim: true,
-      unique: true,
-      index: true,
       lowercase: true,
     },
 

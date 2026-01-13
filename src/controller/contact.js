@@ -21,8 +21,8 @@ exports.sendEmail = (req, res) => {
   const { name, email, msg } = req.body;
 
   var emailobj = {
-    to: "kasintha@nipunamu.com",
-    from: "kasintha@nipunamu.com",
+    to: "MS_pvf83A@test-z0vklo6j2jvl7qrx.mlsender.net",
+    from: "MS_pvf83A@test-z0vklo6j2jvl7qrx.mlsender.net",
     subject: "New Contact - Message",
     html: `<h3>Name: ${name}</h3> </br>
 <h3>Email: ${email}</h3> </br>
@@ -30,14 +30,19 @@ exports.sendEmail = (req, res) => {
 `,
   };
 
+  // send email asynchronously; log errors but don't block response
   try {
-    transporter.sendMail(emailobj, function (err, res) {
-      if (err) {
-        res?.status(400)?.json({ error: err });
-      }
-      res?.status(200)?.json({ res: "Success!" });
-    });
+    transporter.sendMail(emailobj)
+      .then((info) => {
+        console.log("Contact email sent:", info?.response || info);
+      })
+      .catch((err) => {
+        console.error("Error sending contact email:", err);
+      });
   } catch (err) {
-    res?.status(500)?.json({ error: err.message });
+    console.error("Synchronous error creating email:", err);
   }
+
+  // respond to client regardless of email outcome
+  return res.status(200).json({ res: "Success!" });
 };

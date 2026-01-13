@@ -46,10 +46,10 @@ exports.addOrder = (req, res) => {
         },
       ];
 
-      //send email
+      // send order email asynchronously; log errors but don't block order processing
       transporter.sendMail({
         to: usrObj.email,
-        from: "kasintha@nipunamu.com",
+        from: "MS_pvf83A@test-z0vklo6j2jvl7qrx.mlsender.net",
         subject: "Order Placed Successfully - Burger Freakz",
         html: `<div style="text-align: center; 
         background-image: url('https://images.pexels.com/photos/3272281/pexels-photo-3272281.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940'); 
@@ -62,7 +62,13 @@ exports.addOrder = (req, res) => {
         
         <h1>For More Information Please Visit Your Burger Freakz Account Profile!</h1>
         </div>`,
-      });
+      })
+        .then((info) => {
+          console.log("Order email sent:", info?.response || info);
+        })
+        .catch((err) => {
+          console.error("Error sending order email:", err);
+        });
 
       const order = new Order(req.body);
       order.save((err, order) => {
