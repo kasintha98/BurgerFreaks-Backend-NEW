@@ -3,7 +3,6 @@ const slugify = require("slugify");
 const Category = require("../models/category");
 
 exports.addProduct = (req, res) => {
-  //destructuring the request body and getting all the elements separately for easy use
   const {
     name,
     price,
@@ -16,17 +15,14 @@ exports.addProduct = (req, res) => {
     updatedAt,
   } = req.body;
 
-  //saving all produt images uploaded in an array
   let productImages = [];
 
-  //if productImages exists then mapping them to a array of objects as needed in the product schema
   if (req.files.length > 0) {
     productImages = req.files.map((file) => {
       return { img: file.filename };
     });
   }
 
-  //creating new product object (instance) with user inserted data
   const product = new Product({
     name: name,
     slug: slugify(name),
@@ -42,14 +38,25 @@ exports.addProduct = (req, res) => {
     createdBy: req.user._id,
   });
 
-  //saving the new category object(new instance) in the mongo database
-  product.save((err, product) => {
+  // Check if product with same slug already exists
+  Product.findOne({ slug: product.slug }).exec((err, existingProduct) => {
     if (err) {
-      return res.status(202).json({ error: err });
+      return res.status(400).json({ error: err });
     }
-    if (product) {
-      res.status(201).json({ product, msg: "Product added successfully!" });
+
+    if (existingProduct) {
+      return res.status(400).json({ error: "Product with this name already exists!" });
     }
+
+    // Save only if product doesn't exist
+    product.save((err, savedProduct) => {
+      if (err) {
+        return res.status(400).json({ error: err });
+      }
+      if (savedProduct) {
+        return res.status(201).json({ product: savedProduct, msg: "Product added successfully!" });
+      }
+    });
   });
 };
 
@@ -60,13 +67,13 @@ exports.getProductsBySlug = (req, res) => {
     .select("_id")
     .exec((err, category) => {
       if (err) {
-        return res.status(400).json({ err });
+        return res.status(400).json({ error: err });
       }
 
       if (category) {
         Product.find({ category: category._id }).exec((err, products) => {
           if (err) {
-            return res.status(400).json({ err });
+            return res.status(400).json({ error: err });
           }
 
           if (products.length > 0) {
@@ -82,7 +89,7 @@ exports.getSpecificProductBySlug = (req, res) => {
   const { slug } = req.params;
   Product.findOne({ slug: slug }).exec((err, product) => {
     if (err) {
-      return res.status(400).json({ err });
+      return res.status(400).json({ error: err });
     }
     if (product) {
       return res.status(200).json({ product });
@@ -96,7 +103,7 @@ exports.getProducts = (req, res) => {
     .populate({ path: "createdBy", select: "_id firstName lastName" })
     .exec((err, products) => {
       if (err) {
-        return res.status(400).json({ err });
+        return res.status(400).json({ error: err });
       }
       if (products) {
         return res.status(200).json({ products });
@@ -134,7 +141,7 @@ exports.updateProduct = async (req, res) => {
         .then(() =>
           res.status(201).json({ msg: "You've Updated the product!" })
         )
-        .catch((err) => res.status(202).json({ error: err.message }));
+        .catch((err) => res.status(400).json({ error: err.message }));
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -147,7 +154,7 @@ exports.deleteProduct = async (req, res) => {
       .then(() =>
         res.status(200).json({ msg: "Product Deleted Successfully!" })
       )
-      .catch((err) => res.status(202).json({ error: err.message }));
+      .catch((err) => res.status(400).json({ error: err.message }));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

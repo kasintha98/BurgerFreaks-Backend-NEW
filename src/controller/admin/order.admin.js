@@ -13,7 +13,7 @@ exports.updateOrder = (req, res) => {
       },
     }
   ).exec((err, order) => {
-    if (err) return res.status(400).json({ err });
+    if (err) return res.status(400).json({ error: err });
     if (order) {
       res.status(201).json({ order });
     }

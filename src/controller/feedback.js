@@ -14,7 +14,7 @@ exports.addFeedback = async (req, res) => {
   const feed = new Feedback(feedbackObj);
   await feed.save((err, feedback) => {
     if (err) {
-      return res.status(202).json({ error: err });
+      return res.status(400).json({ error: err });
     }
     if (feedback) {
       return res
@@ -30,7 +30,7 @@ exports.getFeedback = async (req, res) => {
     .populate({ path: "userId", select: "_id firstName lastName" })
     .exec((err, feedback) => {
       if (err) {
-        return res.status(400).json({ err });
+        return res.status(400).json({ error: err });
       }
       if (feedback) {
         return res.status(200).json({ feedback });

@@ -14,7 +14,7 @@ exports.addInventory = async (req, res) => {
   const inv = new Inventory(inventoryObj);
   await inv.save((err, inventory) => {
     if (err) {
-      return res.status(202).json({ error: err });
+      return res.status(400).json({ error: err });
     }
     if (inventory) {
       return res
@@ -27,7 +27,7 @@ exports.addInventory = async (req, res) => {
 exports.getInventory = async (req, res) => {
   await Inventory.find({}).exec((err, inventory) => {
     if (err) {
-      return res.status(400).json({ err });
+      return res.status(400).json({ error: err });
     }
     if (inventory) {
       return res.status(200).json({ inventory });
@@ -42,7 +42,7 @@ exports.deleteInventory = async (req, res) => {
       .then(() =>
         res.status(200).json({ msg: "Inventory Item Deleted Successfully!" })
       )
-      .catch((err) => res.status(202).json({ error: err }));
+      .catch((err) => res.status(400).json({ error: err }));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

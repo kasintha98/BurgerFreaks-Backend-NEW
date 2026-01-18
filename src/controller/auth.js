@@ -37,8 +37,8 @@ exports.signup = (req, res) => {
     }
 
     if (user)
-      return res.status(202).json({
-        errormsg: "User already registered!",
+      return res.status(400).json({
+        error: "User already registered!",
       });
 
     const {
@@ -236,7 +236,7 @@ exports.signup = (req, res) => {
 exports.signin = (req, res) => {
   User.findOne({ email: req.body.email }).exec(async (err, user) => {
     if (err) {
-      return res.status(400).json({ err });
+      return res.status(400).json({ error: err });
     }
     if (user) {
       const isPassword = await user.authenticate(req.body.password);
@@ -276,10 +276,10 @@ exports.signin = (req, res) => {
           },
         });
       } else {
-        return res.status(202).json({ errormsg: "Invalid Credentials!" });
+        return res.status(400).json({ error: "Invalid Credentials!" });
       }
     } else {
-      return res.status(202).json({ errormsg: "Invalid Credentials!" });
+      return res.status(400).json({ error: "Invalid Credentials!" });
     }
   });
 };
@@ -341,7 +341,7 @@ exports.newPassword = (req, res) => {
   })
     .then((user) => {
       if (!user) {
-        return res.status(202).json({ error: "Try Again Session Expired!" });
+        return res.status(400).json({ error: "Try Again Session Expired!" });
       }
 
       bcrypt.hash(newPassword, 12).then((hash_password) => {

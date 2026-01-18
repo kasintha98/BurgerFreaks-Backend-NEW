@@ -15,7 +15,7 @@ exports.addItemToCart = (req, res) => {
   Cart.findOne({ user: req.user._id }).exec((err, cart) => {
     if (err) {
       //if an error happen
-      return res.status(400).json({ err });
+      return res.status(400).json({ error: err });
     }
     if (cart) {
       //if cart already exists then update cart by quantity
@@ -57,7 +57,7 @@ exports.addItemToCart = (req, res) => {
 
       cart.save((err, cart) => {
         if (err) {
-          res.status(400).json({ err });
+          res.status(400).json({ error: err });
         }
         if (cart) {
           res.status(201).json({ cart });
@@ -98,7 +98,7 @@ exports.removeCartItems = (req, res) => {
       { user: req.user._id },
       { $pull: { cartItems: { product: productId } } }
     ).exec((err, result) => {
-      if (err) return res.status(400).json({ error });
+      if (err) return res.status(400).json({ error: err });
       if (result) {
         res.status(202).json({ result });
       }

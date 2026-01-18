@@ -1,22 +1,19 @@
 //controller for creating new categories
 const Category = require("../models/category");
+const Product = require("../models/product");
 const slugify = require("slugify");
 
 exports.addCategory = (req, res) => {
-  //destructuring the request body and getting all the elements separately for easy use
   const { name, description } = req.body;
 
-  //saving all category images uploaded in an array
   let categoryImages = [];
 
-  //if categoryImages exists then mapping them to a array of objects as needed in the category schema
   if (req.files.length > 0) {
     categoryImages = req.files.map((file) => {
       return { img: file.filename };
     });
   }
 
-  //creating new category object (instance) with user inserted data
   const categoryObj = {
     name,
     slug: slugify(name),
@@ -25,24 +22,32 @@ exports.addCategory = (req, res) => {
     createdBy: req.user._id,
   };
 
-  //saving the new category object(new instance) in the mongo database
-  const cat = new Category(categoryObj);
-  cat.save((err, category) => {
+  // Check if category with same slug already exists
+  Category.findOne({ slug: categoryObj.slug }).exec((err, existingCategory) => {
     if (err) {
-      return res.status(202).json({ error: err });
+      return res.status(400).json({ error: err });
     }
-    if (category) {
-      return res
-        .status(201)
-        .json({ category, msg: "Category added successfully!" });
+    if (existingCategory) {
+      return res.status(400).json({ error: "Category with this name already exists!" });
     }
+
+    // Save only if category doesn't exist
+    const cat = new Category(categoryObj);
+    cat.save((err, category) => {
+      if (err) {
+        return res.status(400).json({ error: err });
+      }
+      if (category) {
+        return res.status(201).json({ category, msg: "Category added successfully!" });
+      }
+    });
   });
 };
 
 exports.getCategories = (req, res) => {
   Category.find({}).exec((err, categories) => {
     if (err) {
-      return res.status(400).json({ err });
+      return res.status(400).json({ error: err });
     }
     if (categories) {
       //using createCategories function to store all the categories in the categoryList array
@@ -78,7 +83,7 @@ exports.updateCategory = async (req, res) => {
         .then(() =>
           res.status(201).json({ msg: "You've Updated the category!" })
         )
-        .catch((err) => res.status(202).json({ error: err.message }));
+        .catch((err) => res.status(400).json({ error: err.message }));
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -87,11 +92,17 @@ exports.updateCategory = async (req, res) => {
 
 exports.deleteCategory = async (req, res) => {
   try {
+    //Check if any product is associated with this category, if yes then prevent deletion
+    const productCount = await Product.countDocuments({ category: req.params.id });
+    if (productCount > 0) {
+      return res.status(400).json({ error: "Cannot delete category with associated products presents!" });
+    }
+
     await Category.findByIdAndDelete(req.params.id)
       .then(() =>
         res.status(200).json({ msg: "Category Deleted Successfully!" })
       )
-      .catch((err) => res.status(202).json({ error: err.message }));
+      .catch((err) => res.status(400).json({ error: err.message }));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

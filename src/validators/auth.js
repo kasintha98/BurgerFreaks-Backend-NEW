@@ -54,7 +54,7 @@ exports.isRequestValidated = (req, res, next) => {
 
   if (errors.array().length > 0) {
     //if errors exists in the errors array showing them
-    return res.status(202).json({ errormsg: errors.array()[0].msg });
+    return res.status(202).json({ error: errors.array()[0].msg });
   }
   next();
 };

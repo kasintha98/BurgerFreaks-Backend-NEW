@@ -21,7 +21,7 @@ const transporter = nodemailer.createTransport({
 exports.addOrder = (req, res) => {
   //after adding the order we have to delete that items from cart
   Cart.deleteOne({ user: req.user._id }).exec((err, result) => {
-    if (err) return res.status(400).json({ err });
+    if (err) return res.status(400).json({ error: err });
     if (result) {
       const usrObj = req.body.user;
       req.body.user = req.user._id;
@@ -72,7 +72,7 @@ exports.addOrder = (req, res) => {
 
       const order = new Order(req.body);
       order.save((err, order) => {
-        if (err) return res.status(400).json({ err });
+        if (err) return res.status(400).json({ error: err });
         if (order) {
           res.status(201).json({ order });
         }
@@ -86,7 +86,7 @@ exports.getOrders = (req, res) => {
     .select("_id paymentStatus items")
     .populate("items.productId", "_id name productImages")
     .exec((err, orders) => {
-      if (err) return res.status(400).json({ err });
+      if (err) return res.status(400).json({ error: err });
       if (orders) {
         res.status(200).json({ orders });
       }
@@ -98,7 +98,7 @@ exports.searchOrders = (req, res) => {
     .select("_id paymentStatus items")
     .populate("items.productId", "_id name productImages")
     .exec((err, orders) => {
-      if (err) return res.status(200).json({ err });
+      if (err) return res.status(400).json({ error: err });
       if (orders) {
         res.status(200).json({ orders });
       }
@@ -110,10 +110,10 @@ exports.getOrder = (req, res) => {
     .populate("items.productId", "_id name productImages")
     .lean()
     .exec((err, order) => {
-      if (err) return res.status(400).json({ err });
+      if (err) return res.status(400).json({ error: err });
       if (order) {
         Address.findOne({ user: req.user._id }).exec((err, address) => {
-          if (err) return res.status(400).json({ err });
+          if (err) return res.status(400).json({ error: err });
 
           if (address) {
             order.address = address.addressNew.find(
